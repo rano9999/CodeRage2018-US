@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2018/12/02 17:29:58.000.668,=C:\Users\ferna\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2018/12/02 19:25:14.000.363,=C:\Users\ferna\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2018/12/02 19:25:31.000.799,C:\Users\ferna\Documents\Embarcadero\Studio\Projects\Unit1.pas=C:\EVENTS\CodeRage2018-US\Model RFD8500\src\uMainForm.pas</Transaction>
+    <Transaction>2018/12/02 19:25:31.000.799,C:\Users\ferna\Documents\Embarcadero\Studio\Projects\Unit1.fmx=C:\EVENTS\CodeRage2018-US\Model RFD8500\src\uMainForm.fmx</Transaction>
+    <Transaction>2018/12/02 19:25:39.000.924,C:\Users\ferna\Documents\Embarcadero\Studio\Projects\Project1.dproj=C:\EVENTS\CodeRage2018-US\Model RFD8500\src\RFD8500.dproj</Transaction>
+    <Transaction>2018/12/02 19:25:48.000.283,=C:\EVENTS\CodeRage2018-US\Model RFD8500\src\uRFIDBase.pas</Transaction>
+    <Transaction>2018/12/02 19:25:48.000.251,=C:\EVENTS\CodeRage2018-US\Model RFD8500\src\uRFD8500.pas</Transaction>
+  </Transactions>
+	<ActiveMobileDevice>
+		<PmacOS iOSSimulator="iPhone5"/>
+		<NoProfile Android=""/>
+	</ActiveMobileDevice>
+</BorlandProject>

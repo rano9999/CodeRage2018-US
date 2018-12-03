@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<ActiveMobileDevice>
+		<NoProfile iOSSimulator="iPhone5" Android=""/>
+		<PmacOS iOSSimulator="iPhone5"/>
+	</ActiveMobileDevice>
+	<Transactions>
+    <Transaction>2018/06/05 16:58:19.000.516,C:\Users\jefferson.rain\Desktop\BluetoothSPP\LeitorBluetoothSPP.dproj=C:\Users\jefferson.rain\Desktop\BluetoothSPP\BluetoothSPP.dproj</Transaction>
+    <Transaction>2018/06/05 16:58:44.000.607,C:\Users\jefferson.rain\Desktop\BluetoothSPP\FrmPrincipal.fmx=C:\Users\jefferson.rain\Desktop\BluetoothSPP\Main.fmx</Transaction>
+    <Transaction>2018/06/05 16:58:44.000.607,C:\Users\jefferson.rain\Desktop\BluetoothSPP\FrmPrincipal.pas=C:\Users\jefferson.rain\Desktop\BluetoothSPP\Main.pas</Transaction>
+    <Transaction>2018/11/29 19:11:38.000.519,C:\EVENTS\CodeRage2018-US\Model BR200\src\BR200.dproj=C:\EVENTS\CodeRage2018-US\Model BR200\src\LeitorBluetoothSPP.dproj</Transaction>
+    <Transaction>2018/11/29 19:11:49.000.581,C:\EVENTS\CodeRage2018-US\Model BR200\src\uMainForm.pas=C:\EVENTS\CodeRage2018-US\Model BR200\src\FrmPrincipal.pas</Transaction>
+    <Transaction>2018/11/29 19:11:49.000.581,C:\EVENTS\CodeRage2018-US\Model BR200\src\uMainForm.fmx=C:\EVENTS\CodeRage2018-US\Model BR200\src\FrmPrincipal.fmx</Transaction>
+  </Transactions>
+</BorlandProject>

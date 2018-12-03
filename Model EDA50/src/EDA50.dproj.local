@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2018/05/21 10:14:50.000.465,=C:\Users\ferna\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2018/05/21 10:15:24.000.735,C:\Users\ferna\Documents\Embarcadero\Studio\Projects\Unit1.fmx=C:\POCs\Honeywell\uMainForm.fmx</Transaction>
+    <Transaction>2018/05/21 10:15:24.000.735,C:\Users\ferna\Documents\Embarcadero\Studio\Projects\Unit1.pas=C:\POCs\Honeywell\uMainForm.pas</Transaction>
+    <Transaction>2018/05/21 10:15:35.000.376,C:\Users\ferna\Documents\Embarcadero\Studio\Projects\Project1.dproj=C:\POCs\Honeywell\honeywell101.dproj</Transaction>
+    <Transaction>2018/05/31 21:16:50.000.664,C:\POCs\Honeywell102\honeywell101.dproj=C:\POCs\Honeywell102\honeywell102.dproj</Transaction>
+    <Transaction>2018/11/29 13:04:19.000.523,C:\EVENTS\CodeRage2018-US\Scan EDA50\src\EDA50.dproj=C:\EVENTS\CodeRage2018-US\Scan EDA50\src\honeywell102.dproj</Transaction>
+  </Transactions>
+	<ActiveMobileDevice>
+		<NoProfile iOSSimulator="iPhone5" Android=""/>
+		<PmacOS iOSSimulator="iPhone5"/>
+	</ActiveMobileDevice>
+</BorlandProject>
