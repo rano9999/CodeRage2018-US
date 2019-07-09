@@ -6,15 +6,12 @@ inherited MainForm_NmXhdpiPh: TMainForm_NmXhdpiPh
   inherited ToolBar1: TToolBar
     Size.Width = 400.000000000000000000
     inherited butShare: TButton
-      Position.X = 347.000000000000000000
+      Margins.Right = 5.000000000000000000
     end
-  end
-  inherited imgCamera: TImage
-    MultiResBitmap.Height = 117
-    MultiResBitmap.Width = 117
-    MultiResBitmap.LoadSize = 1
-    Size.Width = 390.000000000000000000
-    Size.Height = 490.000000000000000000
+    inherited lblScanStatus: TLabel
+      Position.X = 245.000000000000000000
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+    end
   end
   inherited StyleBook1: TStyleBook
     Styles = <
@@ -35343,21 +35340,18 @@ inherited MainForm_NmXhdpiPh: TMainForm_NmXhdpiPh
           80AE09400000000000}
       end>
   end
-  inherited LayoutBottom: TLayout
-    Position.Y = 548.000000000000000000
+  inherited memLog: TMemo
+    StyledSettings = [Family, Style, FontColor]
+    TextSettings.Font.Size = 10.000000000000000000
+    OnChangeTracking = memLogChangeTracking
+    Margins.Top = 5.000000000000000000
+    Position.Y = 410.000000000000000000
     Size.Width = 390.000000000000000000
-    inherited lblScanStatus: TLabel
-      Margins.Left = 5.000000000000000000
-      Margins.Right = 5.000000000000000000
-      Margins.Bottom = 5.000000000000000000
-      Size.Width = 380.000000000000000000
-      Size.Height = 20.000000000000000000
-      TextSettings.Font.StyleExt = {00070000000000000004000000}
-    end
+    Viewport.Width = 390.000000000000000000
+    Viewport.Height = 200.000000000000000000
   end
-  inherited edtResult: TEdit
-    Position.Y = 578.000000000000000000
+  inherited imgCamera: TImage
     Size.Width = 390.000000000000000000
-    Size.Height = 32.000000000000000000
+    Size.Height = 347.000000000000000000
   end
 end

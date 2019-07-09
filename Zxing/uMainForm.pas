@@ -8,30 +8,29 @@ uses
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.StdCtrls,
   FMX.Objects, FMX.Controls.Presentation, System.Actions, FMX.ActnList,
   FMX.Edit, FMX.Media, ZXing.BarcodeFormat, ZXing.ReadResult, ZXing.ScanManager,
-  FMX.Platform, FMX.Layouts, FMX.StdActns, FMX.MediaLibrary.Actions;
+  FMX.Platform, FMX.Layouts, FMX.StdActns, FMX.MediaLibrary.Actions,
+  FMX.ScrollBox, FMX.Memo, System.IOUtils, AudioManager;
 
 type
   TMainForm = class(TForm)
-    ToolBar1: TToolBar;
+    memLog: TMemo;
     imgCamera: TImage;
+    ToolBar1: TToolBar;
     butStart: TButton;
     butStop: TButton;
-    CameraComponent1: TCameraComponent;
     StyleBook1: TStyleBook;
-    LayoutBottom: TLayout;
     lblScanStatus: TLabel;
-    edtResult: TEdit;
     butShare: TButton;
     ActionList1: TActionList;
     ShowShareSheetAction1: TShowShareSheetAction;
+    Camera: TCameraComponent;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure butStartClick(Sender: TObject);
     procedure butStopClick(Sender: TObject);
-    procedure CameraComponent1SampleBufferReady(Sender: TObject;
-      const ATime: TMediaTime);
-    procedure edtResultChange(Sender: TObject);
     procedure ShowShareSheetAction1BeforeExecute(Sender: TObject);
+    procedure memLogChangeTracking(Sender: TObject);
+    procedure CameraSampleBufferReady(Sender: TObject; const ATime: TMediaTime);
   private
     { Private declarations }
 
@@ -39,11 +38,15 @@ type
     FPermissionCamera, FPermissionReadExternalStorage,
       FPermissionWriteExternalStorage: string;
 
+    // audio (beep)
+    fAudioF: string;
+    fAudioM: TAudioManager;
+
     // for the native zxing.delphi library
     fScanManager: TScanManager;
     fScanInProgress: Boolean;
     fFrameTake: Integer;
-    procedure GetImage();
+    procedure ParseBitmap;
     function AppEvent(AAppEvent: TApplicationEvent; AContext: TObject): Boolean;
 
     // for new Android security model
@@ -59,6 +62,10 @@ type
 var
   MainForm: TMainForm;
 
+const
+  // Skip n frames to do a barcode scan
+  SCAN_EVERY_N_FRAME_FREQ: Integer = 2;
+
 implementation
 
 {$R *.fmx}
@@ -72,45 +79,72 @@ uses System.Threading,
 {$ENDIF}
   FMX.DialogService;
 
-function TMainForm.AppEvent(AAppEvent: TApplicationEvent;
-  AContext: TObject): Boolean;
+procedure TMainForm.FormCreate(Sender: TObject);
+var
+  AppEventSvc: IFMXApplicationEventService;
 begin
-  Result := False;
-  case AAppEvent of
-    TApplicationEvent.WillBecomeInactive, TApplicationEvent.EnteredBackground,
-      TApplicationEvent.WillTerminate:
-      begin
-        CameraComponent1.Active := False;
-        Result := True;
-      end;
+  if TPlatformServices.Current.SupportsPlatformService
+    (IFMXApplicationEventService, IInterface(AppEventSvc)) then
+  begin
+    AppEventSvc.SetApplicationEventHandler(AppEvent);
   end;
-end;
 
-procedure TMainForm.butStartClick(Sender: TObject);
-begin
-  if Assigned(fScanManager) then
-    fScanManager.Free;
-
+  fFrameTake := 0;
+  lblScanStatus.Text := '';
   fScanManager := TScanManager.Create(TBarcodeFormat.Auto, nil);
 
-  PermissionsService.RequestPermissions
-    ([FPermissionCamera, FPermissionReadExternalStorage,
-    FPermissionWriteExternalStorage], TakePicturePermissionRequestResult,
-    DisplayRationale);
+  fAudioM := TAudioManager.Create;
+  fAudioF := TPath.Combine(TPath.GetDocumentsPath, 'Ok.wav');
+  if FileExists(fAudioF) then
+    fAudioM.AddSound(fAudioF);
 
-  lblScanStatus.Text := '';
-  edtResult.Text := '';
+{$IFDEF ANDROID}
+  FPermissionCamera := JStringToString(TJManifest_permission.JavaClass.Camera);
+  FPermissionReadExternalStorage :=
+    JStringToString(TJManifest_permission.JavaClass.READ_EXTERNAL_STORAGE);
+  FPermissionWriteExternalStorage :=
+    JStringToString(TJManifest_permission.JavaClass.WRITE_EXTERNAL_STORAGE);
+{$ENDIF}
 end;
 
-procedure TMainForm.butStopClick(Sender: TObject);
+procedure TMainForm.FormDestroy(Sender: TObject);
 begin
-  CameraComponent1.Active := False;
+  fScanManager.Free;
+  fAudioM.Free;
 end;
 
-procedure TMainForm.CameraComponent1SampleBufferReady(Sender: TObject;
-  const ATime: TMediaTime);
+procedure TMainForm.TakePicturePermissionRequestResult(Sender: TObject;
+  const APermissions: TArray<string>;
+  const AGrantResults: TArray<TPermissionStatus>);
 begin
-  TThread.Synchronize(TThread.CurrentThread, GetImage);
+  // 3 permissions involved: CAMERA, READ_EXTERNAL_STORAGE and WRITE_EXTERNAL_STORAGE
+  if (length(AGrantResults) = 3) and
+    (AGrantResults[0] = TPermissionStatus.Granted) and
+    (AGrantResults[1] = TPermissionStatus.Granted) and
+    (AGrantResults[2] = TPermissionStatus.Granted) then
+  begin
+
+    // workaround for resolution changing when activating for second time
+    try
+      Camera.Active := False;
+      Camera.Quality := FMX.Media.TVideoCaptureQuality.LowQuality;
+      Camera.Active := True;
+    finally
+      Camera.Active := False;
+      Camera.Kind := FMX.Media.TCameraKind.BackCamera;
+      Camera.FocusMode := FMX.Media.TFocusMode.ContinuousAutoFocus;
+      Camera.Quality := FMX.Media.TVideoCaptureQuality.MediumQuality;
+      Camera.Active := True;
+    end;
+
+    lblScanStatus.Text := '';
+    memLog.Lines.Clear;
+  end
+  else
+  begin
+    TDialogService.ShowMessage
+      ('Cannot take a photo because the required permissions are not all granted!');
+  end;
 end;
 
 procedure TMainForm.DisplayRationale(Sender: TObject;
@@ -139,59 +173,42 @@ begin
     end)
 end;
 
-procedure TMainForm.edtResultChange(Sender: TObject);
+procedure TMainForm.butStartClick(Sender: TObject);
 begin
-  ShowShareSheetAction1.Enabled := not edtResult.Text.IsEmpty;
+  PermissionsService.RequestPermissions
+    ([FPermissionCamera, FPermissionReadExternalStorage,
+    FPermissionWriteExternalStorage], TakePicturePermissionRequestResult,
+    DisplayRationale);
 end;
 
-procedure TMainForm.FormCreate(Sender: TObject);
+procedure TMainForm.butStopClick(Sender: TObject);
+begin
+  Camera.Active := False;
+end;
+
+procedure TMainForm.CameraSampleBufferReady(Sender: TObject;
+const ATime: TMediaTime);
+begin
+  TThread.Synchronize(TThread.CurrentThread, ParseBitmap);
+end;
+
+procedure TMainForm.ParseBitmap;
 var
-  AppEventSvc: IFMXApplicationEventService;
-begin
-{$IFDEF ANDROID}
-  FPermissionCamera := JStringToString(TJManifest_permission.JavaClass.CAMERA);
-  FPermissionReadExternalStorage :=
-    JStringToString(TJManifest_permission.JavaClass.READ_EXTERNAL_STORAGE);
-  FPermissionWriteExternalStorage :=
-    JStringToString(TJManifest_permission.JavaClass.WRITE_EXTERNAL_STORAGE);
-{$ENDIF}
-  if TPlatformServices.Current.SupportsPlatformService
-    (IFMXApplicationEventService, IInterface(AppEventSvc)) then
-  begin
-    AppEventSvc.SetApplicationEventHandler(AppEvent);
-  end;
-
-  fFrameTake := 0;
-end;
-
-procedure TMainForm.FormDestroy(Sender: TObject);
-begin
-  fScanManager.Free;
-end;
-
-procedure TMainForm.GetImage;
-var
-  scanBitmap: TBitmap;
   ReadResult: TReadResult;
-
 begin
-  CameraComponent1.SampleBufferToBitmap(imgCamera.Bitmap, True);
-
-  if (fScanInProgress) then
-  begin
-    exit;
-  end;
-
-  { This code will take every 2 frame. }
-  inc(fFrameTake);
-  if (fFrameTake mod 2 <> 0) then
-  begin
-    exit;
-  end;
-
-  scanBitmap := TBitmap.Create();
-  scanBitmap.Assign(imgCamera.Bitmap);
   ReadResult := nil;
+  Camera.SampleBufferToBitmap(imgCamera.Bitmap, True);
+
+  // already parsing...
+  if fScanInProgress then
+    exit;
+
+  // frame control...
+  Inc(fFrameTake);
+  if ((fFrameTake mod SCAN_EVERY_N_FRAME_FREQ) <> 0) then
+  begin
+    exit;
+  end;
 
   TTask.Run(
     procedure
@@ -199,73 +216,65 @@ begin
       try
         fScanInProgress := True;
         try
-          ReadResult := fScanManager.Scan(scanBitmap);
+          ReadResult := fScanManager.Scan(imgCamera.Bitmap);
         except
           on E: Exception do
           begin
-            TThread.Synchronize(nil,
+            TThread.Synchronize(TThread.CurrentThread,
               procedure
               begin
                 lblScanStatus.Text := E.Message;
               end);
-
             exit;
           end;
         end;
 
-        TThread.Synchronize(nil,
+        TThread.Synchronize(TThread.CurrentThread,
           procedure
           begin
-
             if (length(lblScanStatus.Text) > 10) then
-            begin
-              lblScanStatus.Text := '*';
-            end;
-
-            lblScanStatus.Text := lblScanStatus.Text + '*';
-
+              lblScanStatus.Text := '*'
+            else
+              lblScanStatus.Text := lblScanStatus.Text + '*';
             if (ReadResult <> nil) then
             begin
-              edtResult.Text := ReadResult.Text;
+              memLog.Lines.Add(FormatDateTime('hh:nn:ss', Now) + ' - ' +
+                ReadResult.Text);
+              memLog.GoToTextEnd;
+              fAudioM.PlaySound(0);
             end;
-
           end);
 
       finally
         ReadResult.Free;
-        scanBitmap.Free;
         fScanInProgress := False;
       end;
 
     end);
 end;
 
-procedure TMainForm.ShowShareSheetAction1BeforeExecute(Sender: TObject);
+function TMainForm.AppEvent(AAppEvent: TApplicationEvent;
+AContext: TObject): Boolean;
 begin
-  ShowShareSheetAction1.TextMessage := edtResult.Text;
+  Result := True;
+  case AAppEvent of
+    TApplicationEvent.WillBecomeInactive:
+      Camera.Active := False;
+    TApplicationEvent.EnteredBackground:
+      Camera.Active := False;
+    TApplicationEvent.WillTerminate:
+      Camera.Active := False;
+  end;
 end;
 
-procedure TMainForm.TakePicturePermissionRequestResult(Sender: TObject;
-const APermissions: TArray<string>;
-const AGrantResults: TArray<TPermissionStatus>);
+procedure TMainForm.memLogChangeTracking(Sender: TObject);
 begin
-  // 3 permissions involved: CAMERA, READ_EXTERNAL_STORAGE and WRITE_EXTERNAL_STORAGE
-  if (length(AGrantResults) = 3) and
-    (AGrantResults[0] = TPermissionStatus.Granted) and
-    (AGrantResults[1] = TPermissionStatus.Granted) and
-    (AGrantResults[2] = TPermissionStatus.Granted) then
-  begin
-    CameraComponent1.Quality := FMX.Media.TVideoCaptureQuality.MediumQuality;
-    CameraComponent1.Active := False;
-    CameraComponent1.Kind := FMX.Media.TCameraKind.BackCamera;
-    CameraComponent1.FocusMode := FMX.Media.TFocusMode.ContinuousAutoFocus;
-    CameraComponent1.Active := True;
-  end
-  else
-  begin
-    TDialogService.ShowMessage
-      ('Cannot take a photo because the required permissions are not all granted');
-  end;
+  ShowShareSheetAction1.Enabled := not memLog.Text.IsEmpty;
+end;
+
+procedure TMainForm.ShowShareSheetAction1BeforeExecute(Sender: TObject);
+begin
+  ShowShareSheetAction1.TextMessage := memLog.Text;
 end;
 
 end.
